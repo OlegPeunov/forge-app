@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 
 import { authRouter } from './auth';
+import { coachRouter } from './coach';
 import { sessionsRouter } from './sessions';
 
 const app = express();
@@ -11,6 +12,7 @@ const port = Number(process.env.PORT ?? 3000);
 app.use(cors());
 app.use(express.json());
 app.use(authRouter);
+app.use(coachRouter);
 app.use(sessionsRouter);
 
 app.get('/health', (_request, response) => {

@@ -107,14 +107,26 @@ export default function PlanScreen() {
             <View style={styles.brandMark} />
             <Text style={styles.brand}>FORGE</Text>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            hitSlop={12}
-            onPress={() => void handleLogout()}
-            style={styles.logoutButton}
-          >
-            <Text style={styles.logoutLabel}>Log out</Text>
-          </Pressable>
+          <View style={styles.topActions}>
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={10}
+              onPress={() => router.push('/coach')}
+              style={styles.coachButton}
+            >
+              <Text style={styles.coachLabel}>Coach</Text>
+              <Text style={styles.coachArrow}>→</Text>
+            </Pressable>
+            <View style={styles.actionDivider} />
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={12}
+              onPress={() => void handleLogout()}
+              style={styles.logoutButton}
+            >
+              <Text style={styles.logoutLabel}>Log out</Text>
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView
@@ -271,6 +283,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 2.4,
+  },
+  topActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  coachButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+  },
+  coachLabel: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  coachArrow: {
+    color: colors.lime,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  actionDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: colors.border,
   },
   logoutButton: {
     paddingVertical: 6,

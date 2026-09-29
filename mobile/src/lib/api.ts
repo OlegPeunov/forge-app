@@ -32,6 +32,10 @@ type MeResponse = {
   user: User;
 };
 
+type CoachResponse = {
+  reply: string;
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (!API_URL) {
     throw new Error('EXPO_PUBLIC_API_URL is not configured');
@@ -71,5 +75,16 @@ export function completeSession(token: string, sessionId: string) {
   return request<SessionsResponse>(`/sessions/${sessionId}/complete`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function sendCoachMessage(token: string, message: string) {
+  return request<CoachResponse>('/coach', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message }),
   });
 }
