@@ -22,3 +22,10 @@ npm start
 ```
 
 For a physical phone, replace `localhost` in `mobile/.env` with the computer's LAN IP.
+
+## Demo accounts
+
+Both accounts use the password `Forge123!`:
+
+- `demo1@forge.app`
+- `demo2@forge.app`

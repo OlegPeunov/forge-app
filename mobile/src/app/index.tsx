@@ -1,58 +1,51 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
-import { getHealth, type HealthResponse } from '@/lib/api';
+import { getMe, login, type User } from '@/lib/api';
+import { clearToken, getStoredToken, storeToken } from '@/lib/auth';
+
+type AuthState =
+  | { status: 'checking' }
+  | { status: 'signedOut' }
+  | { status: 'signedIn'; user: User };
 
 export default function HomeScreen() {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [auth, setAuth] = useState<AuthState>({ status: 'checking' });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const checkHealth = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      setHealth(await getHealth());
-    } catch (requestError) {
-      setHealth(null);
-      setError(
-        requestError instanceof Error ? requestError.message : 'Unknown error',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     let active = true;
 
-    getHealth()
-      .then((response) => {
-        if (active) {
-          setHealth(response);
+    getStoredToken()
+      .then(async (storedToken) => {
+        if (!storedToken) {
+          if (active) setAuth({ status: 'signedOut' });
+          return;
+        }
+
+        try {
+          const { user } = await getMe(storedToken);
+          if (active) setAuth({ status: 'signedIn', user });
+        } catch {
+          await clearToken();
+          if (active) setAuth({ status: 'signedOut' });
         }
       })
-      .catch((requestError: unknown) => {
-        if (active) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : 'Unknown error',
-          );
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
+      .catch(() => {
+        if (active) setAuth({ status: 'signedOut' });
       });
 
     return () => {
@@ -60,24 +53,108 @@ export default function HomeScreen() {
     };
   }, []);
 
+  async function handleLogin() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await login(email, password);
+      await storeToken(result.token);
+      setPassword('');
+      setAuth({ status: 'signedIn', user: result.user });
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Could not sign in. Try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleLogout() {
+    await clearToken();
+    setAuth({ status: 'signedOut' });
+  }
+
+  if (auth.status === 'checking') {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#d85d32" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (auth.status === 'signedIn') {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.centered}>
+          <Text style={styles.title}>Forge</Text>
+          <Text style={styles.label}>Signed in as</Text>
+          <Text style={styles.email}>{auth.user.email}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void handleLogout()}
+            style={styles.secondaryButton}
+          >
+            <Text style={styles.secondaryButtonText}>Logout</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Forge</Text>
-        <Text style={styles.label}>API health</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.centered}
+      >
+        <View style={styles.form}>
+          <Text style={styles.title}>Forge</Text>
+          <Text style={styles.label}>Sign in to continue</Text>
 
-        {loading ? <ActivityIndicator size="large" color="#d85d32" /> : null}
-        {health ? <Text style={styles.success}>{health.status}</Text> : null}
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+          <TextInput
+            autoCapitalize="none"
+            autoComplete="email"
+            editable={!loading}
+            keyboardType="email-address"
+            onChangeText={setEmail}
+            placeholder="Email"
+            style={styles.input}
+            value={email}
+          />
+          <TextInput
+            autoCapitalize="none"
+            autoComplete="password"
+            editable={!loading}
+            onChangeText={setPassword}
+            onSubmitEditing={() => void handleLogin()}
+            placeholder="Password"
+            secureTextEntry
+            style={styles.input}
+            value={password}
+          />
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void checkHealth()}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>Check again</Text>
-        </Pressable>
-      </View>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <Pressable
+            accessibilityRole="button"
+            disabled={loading}
+            onPress={() => void handleLogin()}
+            style={[styles.primaryButton, loading && styles.buttonDisabled]}
+          >
+            {loading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Login</Text>
+            )}
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -87,39 +164,73 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f7f2ea',
   },
-  container: {
+  centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 18,
     padding: 24,
+  },
+  form: {
+    width: '100%',
+    maxWidth: 420,
+    gap: 14,
   },
   title: {
     color: '#20201e',
     fontSize: 40,
     fontWeight: '700',
+    textAlign: 'center',
   },
   label: {
     color: '#5f5c57',
     fontSize: 18,
+    textAlign: 'center',
   },
-  success: {
-    color: '#26734d',
-    fontSize: 24,
+  email: {
+    color: '#20201e',
+    fontSize: 22,
     fontWeight: '600',
+  },
+  input: {
+    borderColor: '#c9c0b5',
+    borderRadius: 10,
+    borderWidth: 1,
+    backgroundColor: '#ffffff',
+    color: '#20201e',
+    fontSize: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   error: {
     color: '#a1362a',
     textAlign: 'center',
   },
-  button: {
+  primaryButton: {
+    alignItems: 'center',
     borderRadius: 10,
     backgroundColor: '#d85d32',
+    minHeight: 50,
+    justifyContent: 'center',
     paddingHorizontal: 20,
+  },
+  buttonDisabled: {
+    opacity: 0.65,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    borderColor: '#d85d32',
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingHorizontal: 24,
     paddingVertical: 12,
   },
-  buttonText: {
-    color: '#ffffff',
+  secondaryButtonText: {
+    color: '#b34725',
     fontSize: 16,
     fontWeight: '600',
   },
