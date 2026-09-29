@@ -5,6 +5,24 @@ export type User = {
   email: string;
 };
 
+export type SessionStatus = 'completed' | 'open' | 'locked';
+
+export type TrainingSession = {
+  id: string;
+  order: number;
+  title: string;
+  description: string;
+  durationMinutes: number;
+  focusItems: string[];
+  status: SessionStatus;
+};
+
+export type SessionsResponse = {
+  sessions: TrainingSession[];
+  completedCount: number;
+  nextSessionId: string | null;
+};
+
 type LoginResponse = {
   token: string;
   user: User;
@@ -39,6 +57,19 @@ export function login(email: string, password: string) {
 
 export function getMe(token: string) {
   return request<MeResponse>('/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getSessions(token: string) {
+  return request<SessionsResponse>('/sessions', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function completeSession(token: string, sessionId: string) {
+  return request<SessionsResponse>(`/sessions/${sessionId}/complete`, {
+    method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   });
 }

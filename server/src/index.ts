@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 
 import { authRouter } from './auth';
+import { sessionsRouter } from './sessions';
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
@@ -10,6 +11,7 @@ const port = Number(process.env.PORT ?? 3000);
 app.use(cors());
 app.use(express.json());
 app.use(authRouter);
+app.use(sessionsRouter);
 
 app.get('/health', (_request, response) => {
   response.json({ status: 'ok' });

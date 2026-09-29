@@ -1,19 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-
 import bcrypt from 'bcryptjs';
 import { Router, type RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 
-type UserRecord = {
-  id: string;
-  email: string;
-  passwordHash: string;
-};
-
-type Database = {
-  users: UserRecord[];
-};
+import { database, type UserRecord } from './database';
 
 declare global {
   namespace Express {
@@ -23,8 +12,6 @@ declare global {
   }
 }
 
-const databasePath = resolve(__dirname, '../data/db.json');
-const database = JSON.parse(readFileSync(databasePath, 'utf8')) as Database;
 const jwtSecret = process.env.JWT_SECRET;
 
 if (!jwtSecret) {

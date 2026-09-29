@@ -3,12 +3,14 @@
     {
       "id": "user-1",
       "email": "demo1@forge.app",
-      "passwordHash": "$2b$10$ANZtzgtj4pVQDBHvs7oFgOMxc/Joch2wHuIJ8i1yE8HHYAb/85MVu"
+      "passwordHash": "$2b$10$ANZtzgtj4pVQDBHvs7oFgOMxc/Joch2wHuIJ8i1yE8HHYAb/85MVu",
+      "completedSessionIds": []
     },
     {
       "id": "user-2",
       "email": "demo2@forge.app",
-      "passwordHash": "$2b$10$EsN1EApKybU45zvO3b0aiuwz1.Je7PkArKgGUp2iSQziQ.ksX4tsy"
+      "passwordHash": "$2b$10$EsN1EApKybU45zvO3b0aiuwz1.Je7PkArKgGUp2iSQziQ.ksX4tsy",
+      "completedSessionIds": []
     }
   ]
 }
