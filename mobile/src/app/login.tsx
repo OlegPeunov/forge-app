@@ -5,15 +5,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { login } from '@/lib/api';
 import { storeToken } from '@/lib/auth';
+import { colors, layout } from '@/lib/theme';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -41,51 +42,73 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.centered}
+        style={styles.keyboardView}
       >
-        <View style={styles.form}>
-          <Text style={styles.title}>Forge</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+        <View style={styles.screen}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandMark} />
+            <Text style={styles.brand}>FORGE</Text>
+          </View>
 
-          <TextInput
-            autoCapitalize="none"
-            autoComplete="email"
-            editable={!loading}
-            keyboardType="email-address"
-            onChangeText={setEmail}
-            placeholder="Email"
-            style={styles.input}
-            value={email}
-          />
-          <TextInput
-            autoCapitalize="none"
-            autoComplete="password"
-            editable={!loading}
-            onChangeText={setPassword}
-            onSubmitEditing={() => void handleLogin()}
-            placeholder="Password"
-            secureTextEntry
-            style={styles.input}
-            value={password}
-          />
+          <View style={styles.hero}>
+            <Text style={styles.eyebrow}>TRAIN WITH INTENT</Text>
+            <Text style={styles.title}>Build strength.{`\n`}Keep momentum.</Text>
+            <Text style={styles.description}>
+              Three focused sessions. One clear path forward.
+            </Text>
+          </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <View style={styles.form}>
+            <TextInput
+              autoCapitalize="none"
+              autoComplete="email"
+              editable={!loading}
+              keyboardType="email-address"
+              onChangeText={setEmail}
+              placeholder="Email"
+              placeholderTextColor={colors.subtle}
+              style={styles.input}
+              value={email}
+            />
+            <TextInput
+              autoCapitalize="none"
+              autoComplete="password"
+              editable={!loading}
+              onChangeText={setPassword}
+              onSubmitEditing={() => void handleLogin()}
+              placeholder="Password"
+              placeholderTextColor={colors.subtle}
+              secureTextEntry
+              style={styles.input}
+              value={password}
+            />
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={loading}
-            onPress={() => void handleLogin()}
-            style={[styles.button, loading && styles.buttonDisabled]}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>Login</Text>
-            )}
-          </Pressable>
+            {error ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.error}>{error}</Text>
+              </View>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={loading}
+              onPress={() => void handleLogin()}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && styles.buttonPressed,
+                loading && styles.buttonDisabled,
+              ]}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.onLime} />
+              ) : (
+                <Text style={styles.buttonText}>Enter your training</Text>
+              )}
+            </Pressable>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -95,58 +118,104 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f7f2ea',
+    backgroundColor: colors.background,
   },
-  centered: {
+  keyboardView: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
   },
-  form: {
+  screen: {
+    flex: 1,
+    justifyContent: 'space-between',
     width: '100%',
-    maxWidth: 420,
-    gap: 14,
+    maxWidth: layout.maxContentWidth,
+    paddingHorizontal: layout.horizontalPadding,
+    paddingTop: 18,
+    paddingBottom: 20,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  brandMark: {
+    width: 9,
+    height: 9,
+    borderRadius: 3,
+    backgroundColor: colors.lime,
+  },
+  brand: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 2.4,
+  },
+  hero: {
+    gap: 16,
+    paddingVertical: 30,
+  },
+  eyebrow: {
+    color: colors.lime,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.8,
   },
   title: {
-    color: '#20201e',
-    fontSize: 40,
+    color: colors.text,
+    fontSize: 42,
     fontWeight: '700',
-    textAlign: 'center',
+    letterSpacing: -1.5,
+    lineHeight: 46,
   },
-  subtitle: {
-    color: '#5f5c57',
-    fontSize: 18,
-    textAlign: 'center',
+  description: {
+    color: colors.muted,
+    fontSize: 17,
+    lineHeight: 25,
+    maxWidth: 330,
+  },
+  form: {
+    gap: 12,
   },
   input: {
-    borderColor: '#c9c0b5',
-    borderRadius: 10,
+    minHeight: 56,
+    borderRadius: 14,
     borderWidth: 1,
-    backgroundColor: '#ffffff',
-    color: '#20201e',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    color: colors.text,
     fontSize: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 17,
+    paddingVertical: 15,
+  },
+  errorBox: {
+    borderRadius: 12,
+    backgroundColor: '#2A1F1D',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   error: {
-    color: '#a1362a',
-    textAlign: 'center',
+    color: colors.error,
+    fontSize: 14,
+    lineHeight: 20,
   },
   button: {
+    minHeight: 58,
     alignItems: 'center',
-    borderRadius: 10,
-    backgroundColor: '#d85d32',
     justifyContent: 'center',
-    minHeight: 50,
+    borderRadius: 14,
+    backgroundColor: colors.lime,
+    marginTop: 4,
     paddingHorizontal: 20,
   },
+  buttonPressed: {
+    opacity: 0.86,
+  },
   buttonDisabled: {
-    opacity: 0.65,
+    opacity: 0.6,
   },
   buttonText: {
-    color: '#ffffff',
+    color: colors.onLime,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '800',
   },
 });

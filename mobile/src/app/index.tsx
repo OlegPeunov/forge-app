@@ -1,9 +1,11 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, SafeAreaView, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getMe } from '@/lib/api';
 import { clearToken, getStoredToken } from '@/lib/auth';
+import { colors } from '@/lib/theme';
 
 export default function IndexScreen() {
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function IndexScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ActivityIndicator size="large" color="#d85d32" />
+      <ActivityIndicator size="large" color={colors.lime} />
     </SafeAreaView>
   );
 }
@@ -45,6 +47,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f7f2ea',
+    backgroundColor: colors.background,
   },
 });

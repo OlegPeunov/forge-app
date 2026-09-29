@@ -3,15 +3,17 @@ import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { StatusBadge } from '@/components/status-badge';
 import { getSessions, type SessionsResponse } from '@/lib/api';
 import { clearToken, getStoredToken } from '@/lib/auth';
+import { colors, layout } from '@/lib/theme';
 
 export default function PlanScreen() {
   const [plan, setPlan] = useState<SessionsResponse | null>(null);
@@ -59,9 +61,10 @@ export default function PlanScreen() {
 
   if (loading && !plan) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#d85d32" />
+          <ActivityIndicator size="large" color={colors.lime} />
+          <Text style={styles.loadingText}>Loading your training</Text>
         </View>
       </SafeAreaView>
     );
@@ -69,14 +72,23 @@ export default function PlanScreen() {
 
   if (error && !plan) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         <View style={styles.centered}>
+          <Text style={styles.errorTitle}>Couldn&apos;t load your plan</Text>
           <Text style={styles.error}>{error}</Text>
-          <Pressable style={styles.primaryButton} onPress={() => void loadPlan()}>
-            <Text style={styles.primaryButtonText}>Retry</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void loadPlan()}
+            style={styles.primaryButton}
+          >
+            <Text style={styles.primaryButtonText}>Try again</Text>
           </Pressable>
-          <Pressable onPress={() => void handleLogout()}>
-            <Text style={styles.linkText}>Logout</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void handleLogout()}
+            style={styles.textButton}
+          >
+            <Text style={styles.textButtonLabel}>Log out</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -85,72 +97,132 @@ export default function PlanScreen() {
 
   if (!plan) return null;
 
+  const completionRatio = plan.completedCount / plan.sessions.length;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Your plan</Text>
-            <Text style={styles.progress}>
-              {plan.completedCount} of {plan.sessions.length} completed
-            </Text>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      <View style={styles.screen}>
+        <View style={styles.topBar}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandMark} />
+            <Text style={styles.brand}>FORGE</Text>
           </View>
-          <Pressable onPress={() => void handleLogout()}>
-            <Text style={styles.linkText}>Logout</Text>
-          </Pressable>
-        </View>
-
-        {error ? (
-          <View style={styles.inlineError}>
-            <Text style={styles.error}>{error}</Text>
-            <Pressable onPress={() => void loadPlan()}>
-              <Text style={styles.linkText}>Retry</Text>
-            </Pressable>
-          </View>
-        ) : null}
-
-        <View style={styles.list}>
-          {plan.sessions.map((session) => {
-            const locked = session.status === 'locked';
-
-            return (
-              <Pressable
-                accessibilityRole="button"
-                disabled={locked}
-                key={session.id}
-                onPress={() => openSession(session.id)}
-                style={[styles.card, locked && styles.lockedCard]}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardOrder}>Session {session.order}</Text>
-                  <Text style={styles.status}>{session.status}</Text>
-                </View>
-                <Text style={styles.cardTitle}>{session.title}</Text>
-                <Text style={styles.description}>{session.description}</Text>
-                <Text style={styles.duration}>
-                  About {session.durationMinutes} min
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {plan.nextSessionId ? (
           <Pressable
-            style={styles.primaryButton}
-            onPress={() => openSession(plan.nextSessionId!)}
+            accessibilityRole="button"
+            hitSlop={12}
+            onPress={() => void handleLogout()}
+            style={styles.logoutButton}
           >
-            <Text style={styles.primaryButtonText}>Continue next session</Text>
+            <Text style={styles.logoutLabel}>Log out</Text>
           </Pressable>
-        ) : (
-          <View style={styles.completeCard}>
-            <Text style={styles.completeTitle}>Plan complete</Text>
-            <Text style={styles.description}>
-              You completed all three sessions.
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          style={styles.scroll}
+        >
+          <View style={styles.headingBlock}>
+            <Text style={styles.eyebrow}>THIS WEEK</Text>
+            <Text style={styles.title}>Your training</Text>
+            <Text style={styles.subtitle}>
+              Stay consistent. The next session opens when you&apos;re ready.
             </Text>
           </View>
-        )}
-      </ScrollView>
+
+          <View style={styles.progressBlock}>
+            <View style={styles.progressLabels}>
+              <Text style={styles.progressText}>Progress</Text>
+              <Text style={styles.progressValue}>
+                {plan.completedCount} of {plan.sessions.length} completed
+              </Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View
+                style={[styles.progressFill, { width: `${completionRatio * 100}%` }]}
+              />
+            </View>
+          </View>
+
+          {error ? (
+            <View style={styles.inlineError}>
+              <Text style={styles.error}>{error}</Text>
+              <Pressable accessibilityRole="button" onPress={() => void loadPlan()}>
+                <Text style={styles.retryLabel}>Retry</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          <View style={styles.list}>
+            {plan.sessions.map((session) => {
+              const locked = session.status === 'locked';
+              const open = session.status === 'open';
+              const completed = session.status === 'completed';
+
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={locked}
+                  key={session.id}
+                  onPress={() => openSession(session.id)}
+                  style={({ pressed }) => [
+                    styles.card,
+                    open && styles.openCard,
+                    completed && styles.completedCard,
+                    locked && styles.lockedCard,
+                    pressed && !locked && styles.cardPressed,
+                  ]}
+                >
+                  <View style={styles.cardTopRow}>
+                    <Text style={[styles.sessionNumber, open && styles.openNumber]}>
+                      {String(session.order).padStart(2, '0')}
+                    </Text>
+                    <StatusBadge status={session.status} />
+                  </View>
+
+                  <View style={styles.cardBody}>
+                    <Text style={[styles.cardTitle, locked && styles.lockedText]}>
+                      {session.title}
+                    </Text>
+                    <View style={styles.metaRow}>
+                      <Text style={styles.duration}>
+                        {session.durationMinutes} MIN
+                      </Text>
+                      {open ? <Text style={styles.beginLabel}>BEGIN  →</Text> : null}
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          {plan.nextSessionId ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => openSession(plan.nextSessionId!)}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.primaryButtonPressed,
+              ]}
+            >
+              <Text style={styles.primaryButtonText}>Continue training</Text>
+              <Text style={styles.primaryButtonArrow}>→</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.planComplete}>
+              <View style={styles.completeIcon}>
+                <Text style={styles.completeIconText}>✓</Text>
+              </View>
+              <View style={styles.completeCopy}>
+                <Text style={styles.completeTitle}>Plan complete</Text>
+                <Text style={styles.completeDescription}>Three sessions. Done.</Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -158,111 +230,285 @@ export default function PlanScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f7f2ea',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  screen: {
+    flex: 1,
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
   },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 18,
-    padding: 24,
+    gap: 16,
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
+    paddingHorizontal: layout.horizontalPadding,
   },
-  content: {
-    gap: 20,
-    padding: 24,
-  },
-  header: {
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: layout.horizontalPadding,
+    paddingTop: 14,
+    paddingBottom: 12,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  brandMark: {
+    width: 9,
+    height: 9,
+    borderRadius: 3,
+    backgroundColor: colors.lime,
+  },
+  brand: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 2.4,
+  },
+  logoutButton: {
+    paddingVertical: 6,
+  },
+  logoutLabel: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: layout.horizontalPadding,
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  headingBlock: {
+    gap: 10,
+  },
+  eyebrow: {
+    color: colors.lime,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.8,
   },
   title: {
-    color: '#20201e',
-    fontSize: 32,
+    color: colors.text,
+    fontSize: 40,
     fontWeight: '700',
+    letterSpacing: -1.4,
+    lineHeight: 44,
   },
-  progress: {
-    color: '#5f5c57',
-    fontSize: 16,
-    marginTop: 4,
+  subtitle: {
+    color: colors.muted,
+    fontSize: 15,
+    lineHeight: 22,
+    maxWidth: 350,
+  },
+  progressBlock: {
+    gap: 10,
+    marginTop: 28,
+  },
+  progressLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  progressText: {
+    color: colors.subtle,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  progressValue: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  progressTrack: {
+    height: 4,
+    overflow: 'hidden',
+    borderRadius: 999,
+    backgroundColor: colors.border,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: colors.lime,
   },
   list: {
     gap: 12,
+    marginTop: 24,
   },
   card: {
-    borderColor: '#c9c0b5',
-    borderRadius: 12,
+    minHeight: 128,
+    justifyContent: 'space-between',
+    borderRadius: 18,
     borderWidth: 1,
-    backgroundColor: '#ffffff',
-    gap: 8,
-    padding: 18,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: 17,
+  },
+  openCard: {
+    borderColor: colors.lime,
+    backgroundColor: colors.limeSoft,
+  },
+  completedCard: {
+    backgroundColor: '#1B211B',
   },
   lockedCard: {
-    opacity: 0.5,
+    opacity: 0.55,
   },
-  cardHeader: {
+  cardPressed: {
+    opacity: 0.8,
+  },
+  cardTopRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
-  cardOrder: {
-    color: '#5f5c57',
-    fontSize: 14,
+  sessionNumber: {
+    color: colors.subtle,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.2,
   },
-  status: {
-    color: '#b34725',
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+  openNumber: {
+    color: colors.lime,
+  },
+  cardBody: {
+    gap: 10,
   },
   cardTitle: {
-    color: '#20201e',
-    fontSize: 22,
-    fontWeight: '600',
+    color: colors.text,
+    fontSize: 23,
+    fontWeight: '700',
+    letterSpacing: -0.4,
   },
-  description: {
-    color: '#5f5c57',
-    fontSize: 16,
-    lineHeight: 22,
+  lockedText: {
+    color: colors.muted,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   duration: {
-    color: '#20201e',
-    fontSize: 14,
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+  },
+  beginLabel: {
+    color: colors.lime,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
+    paddingHorizontal: layout.horizontalPadding,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   primaryButton: {
+    minHeight: 58,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
-    backgroundColor: '#d85d32',
-    justifyContent: 'center',
-    minHeight: 50,
+    justifyContent: 'space-between',
+    borderRadius: 15,
+    backgroundColor: colors.lime,
     paddingHorizontal: 20,
   },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+  primaryButtonPressed: {
+    opacity: 0.86,
   },
-  linkText: {
-    color: '#b34725',
+  primaryButtonText: {
+    color: colors.onLime,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '800',
+  },
+  primaryButtonArrow: {
+    color: colors.onLime,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  planComplete: {
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: 15,
+    backgroundColor: colors.limeSoft,
+    paddingHorizontal: 16,
+  },
+  completeIcon: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: colors.lime,
+  },
+  completeIconText: {
+    color: colors.onLime,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  completeCopy: {
+    gap: 2,
+  },
+  completeTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  completeDescription: {
+    color: colors.muted,
+    fontSize: 13,
+  },
+  loadingText: {
+    color: colors.muted,
+    fontSize: 14,
+  },
+  errorTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   error: {
-    color: '#a1362a',
+    color: colors.error,
+    fontSize: 14,
+    lineHeight: 20,
     textAlign: 'center',
   },
   inlineError: {
     alignItems: 'center',
-    gap: 8,
-  },
-  completeCard: {
-    borderRadius: 12,
-    backgroundColor: '#e4eee7',
     gap: 6,
-    padding: 18,
+    borderRadius: 12,
+    backgroundColor: '#2A1F1D',
+    marginTop: 18,
+    padding: 12,
   },
-  completeTitle: {
-    color: '#26734d',
-    fontSize: 20,
+  retryLabel: {
+    color: colors.text,
+    fontSize: 14,
     fontWeight: '700',
+  },
+  textButton: {
+    padding: 10,
+  },
+  textButtonLabel: {
+    color: colors.muted,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
