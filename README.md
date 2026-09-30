@@ -1,6 +1,6 @@
 ## Loom
 
-Loom walkthrough: ADD_LINK_AFTER_RECORDING
+Loom walkthrough: https://www.loom.com/share/9457b74ae27b4ddd9691a9f43bb41090
 
 # Forge
 
