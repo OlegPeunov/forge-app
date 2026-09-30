@@ -4,7 +4,10 @@
       "id": "user-1",
       "email": "demo1@forge.app",
       "passwordHash": "$2b$10$ANZtzgtj4pVQDBHvs7oFgOMxc/Joch2wHuIJ8i1yE8HHYAb/85MVu",
-      "completedSessionIds": []
+      "completedSessionIds": [
+        "session-1",
+        "session-2"
+      ]
     },
     {
       "id": "user-2",

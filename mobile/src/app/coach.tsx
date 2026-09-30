@@ -90,7 +90,7 @@ export default function CoachScreen() {
             <Pressable
               accessibilityRole="button"
               hitSlop={12}
-              onPress={() => router.back()}
+              onPress={() => router.replace('/plan')}
               style={styles.backButton}
             >
               <Text style={styles.backArrow}>←</Text>
